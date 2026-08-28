@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Marshie!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap');
+
+  :root{
+    --space-navy: #161A3A;
+    --space-navy-2: #232A57;
+    --space-navy-3: #2E3670;
+    --mars-clay: #C1502E;
+    --mars-clay-light: #E17A4E;
+    --marshie-green: #7FE0A0;
+    --marshie-green-dark: #4CB876;
+    --star-yellow: #FFD75E;
+    --berry-pink: #FF6F91;
+    --cream: #FBF6EC;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body {
+    margin:0; padding:0; height:100%;
+    background: var(--space-navy);
+    font-family: 'Quicksand', sans-serif;
+    color: var(--cream);
+    overflow: hidden;
+  }
+
+  .app{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 560px;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(46,54,112,0.9), transparent 55%),
+      radial-gradient(ellipse at 85% 85%, rgba(193,80,46,0.25), transparent 50%),
+      var(--space-navy);
+    overflow: hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .stars{ position:absolute; inset:0; pointer-events:none; }
+  .star{
+    position:absolute; background: var(--cream); border-radius:50%;
+    animation: twinkle 3s ease-in-out infinite;
+    opacity:0.6;
+  }
+  @keyframes twinkle{
+    0%,100%{ opacity:0.25; transform:scale(1); }
+    50%{ opacity:0.95; transform:scale(1.3); }
+  }
+
+  .screen{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding: 24px 16px;
+    text-align:center;
+  }
+  .screen.active{ display:flex; }
+
+  h1, h2, h3{ font-family:'Baloo 2', cursive; margin:0; }
+
+  /* ---------- START SCREEN ---------- */
+  .title-wrap{ position:relative; margin-bottom: 6px; }
+  .app-title{
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    color: var(--cream);
+    text-shadow: 0 4px 0 rgba(0,0,0,0.25);
+    letter-spacing: 1px;
+  }
+  .app-title .find{ color: var(--star-yellow); }
+  .app-title .marshie{ color: var(--marshie-green); }
+
+  .subtitle{
+    font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+    color: rgba(251,246,236,0.8);
+    margin-top: 6px;
+    max-width: 420px;
+  }
+
+  .marshie-hero{ width: 150px; height: 150px; margin: 10px 0; filter: drop-shadow(0 10px 18px rgba(0,0,0,0.35)); animation: float 3.2s ease-in-out infinite; }
+  @keyframes float{
+    0%,100%{ transform: translateY(0px) rotate(-2deg); }
+    50%{ transform: translateY(-10px) rotate(2deg); }
+  }
+
+  .mode-select{ margin-top: 18px; }
+  .mode-label{ font-family:'Baloo 2'; font-size:1.05rem; color: var(--star-yellow); margin-bottom:10px; }
+  .mode-cards{ display:flex; gap: 14px; flex-wrap:wrap; justify-content:center; }
+  .mode-card{
+    background: var(--space-navy-2);
+    border: 3px solid var(--space-navy-3);
+    border-radius: 18px;
+    padding: 14px 16px;
+    width: 150px;
+    cursor:pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    font-family:'Quicksand';
+  }
+  .mode-card:hover{ transform: translateY(-3px); }
+  .mode-card.selected{ border-color: var(--marshie-green); box-shadow: 0 0 0 3px rgba(127,224,160,0.25); }
+  .mode-card .emoji{ font-size: 2rem; }
+  .mode-card .mtitle{ font-family:'Baloo 2'; font-size:1rem; color: var(--cream); margin-top:4px; }
+  .mode-card .mage{ font-size:0.8rem; color: rgba(251,246,236,0.65); }
+
+  .btn{
+    font-family:'Baloo 2';
+    font-size: 1.15rem;
+    padding: 14px 34px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    background: var(--marshie-green-dark);
+    color: var(--space-navy);
+    box-shadow: 0 6px 0 #35895c;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .btn:active{ transform: translateY(4px); box-shadow: 0 2px 0 #35895c; }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn.secondary{
+    background: var(--star-yellow);
+    box-shadow: 0 6px 0 #c9a53f;
+    color: var(--space-navy);
+  }
+  .btn.secondary:active{ box-shadow: 0 2px 0 #c9a53f; }
+
+  .start-btn{ margin-top: 22px; }
+
+  /* ---------- LEVEL SCREEN ---------- */
+  .level-card{
+    background: rgba(35,42,87,0.65);
+    border-radius: 28px;
+    padding: 20px 22px 26px;
+    width: min(92vw, 560px);
+    backdrop-filter: blur(2px);
+    border: 2px solid rgba(255,255,255,0.06);
+  }
+
+  .tracker-row{ display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom: 10px; }
+  .tracker-shape{ position:relative; width:46px; height:46px; }
+  .tracker-shape svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .tracker-fill{ overflow:hidden; position:absolute; inset:0; transition: width 0.6s ease; }
+  .dots{ display:flex; gap:8px; }
+  .dot{ width:12px; height:12px; border-radius:50%; background: var(--space-navy-3); transition: background 0.3s ease; }
+  .dot.done{ background: var(--marshie-green); }
+  .dot.current{ background: var(--star-yellow); }
+
+  .planet-badge{
+    font-family:'Baloo 2';
+    font-size: 0.85rem;
+    color: var(--star-yellow);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .level-name{
+    font-size: clamp(1.3rem, 4vw, 1.7rem);
+    color: var(--cream);
+    margin-bottom: 10px;
+  }
+
+  .clue-box{
+    background: var(--space-navy);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin: 12px 0 16px;
+    font-size: clamp(1rem, 2.6vw, 1.15rem);
+    line-height: 1.4;
+    color: var(--cream);
+    border-left: 5px solid var(--mars-clay-light);
+  }
+  .clue-box b{ color: var(--star-yellow); }
+
+  .items-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+    margin: 6px 0 8px;
+  }
+  .item-btn{
+    background: var(--space-navy-2);
+    border: 3px solid var(--space-navy-3);
+    border-radius: 18px;
+    font-size: 2.4rem;
+    padding: 14px 4px 8px;
+    cursor:pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.2s ease;
+    position:relative;
+  }
+  .item-btn:hover{ transform: translateY(-3px); }
+  .item-btn .ilabel{ display:block; font-family:'Quicksand'; font-size: 0.72rem; color: rgba(251,246,236,0.7); margin-top:4px; }
+  .item-btn.wrong{ animation: shake 0.4s ease; border-color: var(--berry-pink); }
+  .item-btn.correct{ animation: pop 0.4s ease; border-color: var(--marshie-green); background: rgba(127,224,160,0.18); }
+  .item-btn.hinted{ box-shadow: 0 0 0 4px rgba(255,215,94,0.5); }
+  @keyframes shake{
+    0%,100%{ transform: translateX(0); }
+    25%{ transform: translateX(-6px); }
+    75%{ transform: translateX(6px); }
+  }
+  @keyframes pop{
+    0%{ transform: scale(1); }
+    50%{ transform: scale(1.15); }
+    100%{ transform: scale(1); }
+  }
+
+  .feedback{
+    min-height: 26px;
+    font-family:'Baloo 2';
+    font-size: 1rem;
+    margin-top: 6px;
+  }
+  .feedback.win{ color: var(--marshie-green); }
+  .feedback.miss{ color: var(--berry-pink); }
+
+  .level-controls{ display:flex; gap:10px; justify-content:center; margin-top: 12px; }
+  .hint-btn{
+    font-family:'Baloo 2';
+    background: transparent;
+    color: var(--star-yellow);
+    border: 2px dashed var(--star-yellow);
+    border-radius: 999px;
+    padding: 8px 18px;
+    cursor:pointer;
+    font-size: 0.9rem;
+  }
+
+  /* door finale level */
+  .doors-row{ display:flex; gap:16px; justify-content:center; margin: 14px 0 6px; }
+  .door{
+    width: 92px; height: 140px;
+    background: linear-gradient(180deg, #7A4A2B, #5C3720);
+    border-radius: 10px 10px 4px 4px;
+    border: 4px solid #4a2c19;
+    cursor:pointer;
+    position:relative;
+    display:flex; align-items:flex-end; justify-content:center;
+    transition: transform 0.15s ease;
+    overflow:hidden;
+  }
+  .door:hover{ transform: translateY(-4px); }
+  .door .peek{ font-size:1.6rem; position:absolute; top:10px; left:50%; transform:translateX(-50%); opacity:0; transition:opacity 0.2s ease; }
+  .door.peeking .peek{ opacity:1; }
+  .door .knob{ width:8px; height:8px; border-radius:50%; background:#FFD75E; position:absolute; right:10px; top:50%; }
+  .door.opened{ background: linear-gradient(180deg, var(--marshie-green), var(--marshie-green-dark)); }
+
+  /* ---------- FINALE SCREEN ---------- */
+  .finale-marshie{ width: 220px; height: 220px; filter: drop-shadow(0 14px 24px rgba(0,0,0,0.4)); animation: bounceIn 0.7s ease; }
+  @keyframes bounceIn{
+    0%{ transform: scale(0.3); opacity:0; }
+    60%{ transform: scale(1.15); opacity:1; }
+    100%{ transform: scale(1); }
+  }
+  .finale-title{ font-size: clamp(1.8rem, 6vw, 2.6rem); color: var(--star-yellow); margin-top: 6px; }
+  .finale-sub{ color: rgba(251,246,236,0.85); max-width: 380px; margin: 8px 0 18px; }
+  .badge-row{ display:flex; gap:10px; margin-bottom:18px; }
+  .badge{ font-size:1.6rem; }
+
+  .confetti{ position:absolute; top:-20px; border-radius:2px; animation: fall linear forwards; }
+  @keyframes fall{
+    to{ transform: translateY(115vh) rotate(360deg); opacity:0.9; }
+  }
+
+  @media (max-width: 420px){
+    .item-btn{ font-size: 2rem; padding: 10px 2px 6px; }
+    .door{ width: 76px; height: 118px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="stars" id="starsBg"></div>
+
+  <!-- START SCREEN -->
+  <div class="screen active" id="screen-start">
+    <div class="title-wrap">
+      <h1 class="app-title"><span class="find">Find</span> <span class="marshie">Marshie!</span></h1>
+    </div>
+    <p class="subtitle">Marshie the Martian wandered off across space and left clues behind. Follow the trail, solve each spot, and find Marshie at the end!</p>
+    <svg class="marshie-hero" viewBox="0 0 200 200" id="heroSvg"></svg>
+
+    <div class="mode-select">
+      <div class="mode-label">Pick your explorer level</div>
+      <div class="mode-cards">
+        <div class="mode-card selected" data-mode="easy" onclick="selectMode('easy', this)">
+          <div class="emoji">🌟</div>
+          <div class="mtitle">Little Explorer</div>
+          <div class="mage">Ages 5–6</div>
+        </div>
+        <div class="mode-card" data-mode="hard" onclick="selectMode('hard', this)">
+          <div class="emoji">🚀</div>
+          <div class="mtitle">Space Ranger</div>
+          <div class="mage">Ages 6–7</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn start-btn" onclick="startGame()">Start the Mission</button>
+  </div>
+
+  <!-- LEVEL SCREEN -->
+  <div class="screen" id="screen-level">
+    <div class="level-card">
+      <div class="tracker-row">
+        <div class="tracker-shape">
+          <svg viewBox="0 0 200 200" id="trackerBg"></svg>
+          <div class="tracker-fill" id="trackerFillWrap" style="width:0%;">
+            <svg viewBox="0 0 200 200" id="trackerFg" style="width:46px;height:46px;"></svg>
+          </div>
+        </div>
+        <div class="dots" id="dotsRow"></div>
+      </div>
+
+      <div class="planet-badge" id="planetBadge">STOP 1 OF 5</div>
+      <h2 class="level-name" id="levelName">The Launch Pad</h2>
+
+      <div class="clue-box" id="clueBox"></div>
+
+      <div id="gameArea"></div>
+
+      <div class="feedback" id="feedback"></div>
+
+      <div class="level-controls">
+        <button class="hint-btn" id="hintBtn" onclick="showHint()">💡 Need a hint?</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINALE SCREEN -->
+  <div class="screen" id="screen-finale">
+    <svg class="finale-marshie" viewBox="0 0 200 200" id="finaleSvg"></svg>
+    <h2 class="finale-title">You Found Marshie!</h2>
+    <p class="finale-sub">You followed every clue across space and brought Marshie home. Great exploring, astronaut!</p>
+    <div class="badge-row" id="badgeRow"></div>
+    <button class="btn" onclick="restartGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- Marshie SVG ---------------- */
+function marshieSVG(opts){
+  opts = opts || {};
+  var faded = opts.faded ? 0.18 : 1;
+  return `
+    <defs>
+      <radialGradient id="bodyGrad${opts.id||''}" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#A9F0C0"/>
+        <stop offset="100%" stop-color="#4CB876"/>
+      </radialGradient>
+    </defs>
+    <g opacity="${faded}">
+      <ellipse cx="72" cy="46" rx="4" ry="14" fill="#4CB876"/>
+      <circle cx="72" cy="34" r="8" fill="#FFD75E"/>
+      <ellipse cx="128" cy="46" rx="4" ry="14" fill="#4CB876"/>
+      <circle cx="128" cy="34" r="8" fill="#FFD75E"/>
+      <ellipse cx="100" cy="120" rx="72" ry="62" fill="url(#bodyGrad${opts.id||''})"/>
+      <ellipse cx="100" cy="150" rx="46" ry="14" fill="#3a9a63" opacity="0.5"/>
+      <circle cx="78" cy="110" r="19" fill="white"/>
+      <circle cx="122" cy="110" r="19" fill="white"/>
+      <circle cx="81" cy="113" r="8" fill="#1B1B3A"/>
+      <circle cx="125" cy="113" r="8" fill="#1B1B3A"/>
+      <circle cx="84" cy="109" r="2.5" fill="white"/>
+      <circle cx="128" cy="109" r="2.5" fill="white"/>
+      <path d="M82 138 Q100 152 118 138" stroke="#1B1B3A" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <circle cx="60" cy="128" r="9" fill="#FF9EB4" opacity="0.6"/>
+      <circle cx="140" cy="128" r="9" fill="#FF9EB4" opacity="0.6"/>
+    </g>
+  `;
+}
+document.getElementById('heroSvg').innerHTML = marshieSVG({id:'hero'});
+document.getElementById('trackerBg').innerHTML = marshieSVG({id:'tbg', faded:true});
+document.getElementById('trackerFg').innerHTML = marshieSVG({id:'tfg'});
+document.getElementById('finaleSvg').innerHTML = marshieSVG({id:'final'});
+
+/* ---------------- Starfield ---------------- */
+var starsBg = document.getElementById('starsBg');
+for (var i=0;i<60;i++){
+  var s = document.createElement('div');
+  s.className = 'star';
+  var size = Math.random()*2.4 + 1;
+  s.style.width = size+'px';
+  s.style.height = size+'px';
+  s.style.left = (Math.random()*100)+'%';
+  s.style.top = (Math.random()*100)+'%';
+  s.style.animationDelay = (Math.random()*3)+'s';
+  starsBg.appendChild(s);
+}
+
+/* ---------------- Game data ---------------- */
+var LEVELS = [
+  {
+    planet: "Stop 1 of 5",
+    name: "The Launch Pad",
+    clueEasy: "Marshie was so excited to blast off that a snack fell out of the rocket! It's yellow and curvy, just like the moon.",
+    clueHard: "Before lift-off, Marshie dropped a favorite treat near the rocket. It's shaped like a little crescent moon!",
+    correct: {emoji:'🍌', label:'Banana'},
+    wrongs: [
+      {emoji:'🍎', label:'Apple'},
+      {emoji:'🍇', label:'Grapes'},
+      {emoji:'🍕', label:'Pizza'}
+    ]
+  },
+  {
+    planet: "Stop 2 of 5",
+    name: "The Moon Craters",
+    clueEasy: "Marshie was hopping over craters and lost a bouncy ball!",
+    clueHard: "While bouncing between craters on the moon, something round and bouncy rolled away.",
+    correct: {emoji:'🏐', label:'Ball'},
+    wrongs: [
+      {emoji:'🎁', label:'Gift'},
+      {emoji:'🧸', label:'Bear'},
+      {emoji:'📦', label:'Box'}
+    ]
+  },
+  {
+    planet: "Stop 3 of 5",
+    name: "The Star Field",
+    clueEasy: "Marshie loves counting stars! While looking up, a special looking-tool got left behind.",
+    clueHard: "Marshie was busy stargazing and forgot the tool used to see far-away stars up close.",
+    correct: {emoji:'🔭', label:'Telescope'},
+    wrongs: [
+      {emoji:'📷', label:'Camera'},
+      {emoji:'🕶️', label:'Sunglasses'},
+      {emoji:'💡', label:'Lightbulb'}
+    ]
+  },
+  {
+    planet: "Stop 4 of 5",
+    name: "The Asteroid Belt",
+    clueEasy: "Zooming past space rocks, the wind blew Marshie's favorite hat right off!",
+    clueHard: "Weaving through the asteroid belt, Marshie's favorite head covering flew away in the space wind.",
+    correct: {emoji:'🧢', label:'Cap'},
+    wrongs: [
+      {emoji:'👒', label:'Sun Hat'},
+      {emoji:'🎩', label:'Top Hat'},
+      {emoji:'⛑️', label:'Helmet'}
+    ]
+  }
+];
+// Final door level handled separately.
+
+var TOTAL_LEVELS = LEVELS.length + 1; // 4 clue levels + 1 door finale
+var mode = 'easy';
+var currentLevel = 0; // index into LEVELS, then a final "door" stage
+var wrongTries = 0;
+var doorCorrect = 0;
+var stars = { total: 0 };
+
+/* ---------------- Mode select ---------------- */
+function selectMode(m, el){
+  mode = m;
+  document.querySelectorAll('.mode-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function startGame(){
+  currentLevel = 0;
+  stars.total = 0;
+  showScreen('screen-level');
+  loadLevel();
+}
+
+function restartGame(){
+  showScreen('screen-start');
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---------------- Tracker / dots ---------------- */
+function updateTracker(){
+  var pct = Math.round((currentLevel / TOTAL_LEVELS) * 100);
+  document.getElementById('trackerFillWrap').style.width = pct + '%';
+  var dotsRow = document.getElementById('dotsRow');
+  dotsRow.innerHTML = '';
+  for (var i=0;i<TOTAL_LEVELS;i++){
+    var d = document.createElement('div');
+    d.className = 'dot' + (i < currentLevel ? ' done' : (i === currentLevel ? ' current' : ''));
+    dotsRow.appendChild(d);
+  }
+}
+
+/* ---------------- Level rendering (find-the-item levels) ---------------- */
+function loadLevel(){
+  wrongTries = 0;
+  updateTracker();
+
+  if (currentLevel < LEVELS.length){
+    renderItemLevel(LEVELS[currentLevel]);
+  } else {
+    renderDoorLevel();
+  }
+}
+
+function renderItemLevel(level){
+  document.getElementById('planetBadge').textContent = level.planet.toUpperCase();
+  document.getElementById('levelName').textContent = level.name;
+  document.getElementById('clueBox').innerHTML = '<b>Clue:</b> ' + (mode === 'easy' ? level.clueEasy : level.clueHard);
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('hintBtn').style.display = 'inline-block';
+  document.getElementById('hintBtn').disabled = false;
+  document.getElementById('hintBtn').textContent = '💡 Need a hint?';
+
+  var wrongCount = mode === 'easy' ? 2 : 3;
+  var chosenWrongs = level.wrongs.slice(0, wrongCount);
+  var items = chosenWrongs.concat([level.correct]);
+  // shuffle
+  for (var i = items.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i+1));
+    var tmp = items[i]; items[i] = items[j]; items[j] = tmp;
+  }
+
+  var grid = document.createElement('div');
+  grid.className = 'items-grid';
+  items.forEach(function(item){
+    var btn = document.createElement('button');
+    btn.className = 'item-btn';
+    btn.innerHTML = item.emoji + '<span class="ilabel">' + item.label + '</span>';
+    btn.onclick = function(){ handleItemClick(btn, item.label === level.correct.label); };
+    grid.appendChild(btn);
+  });
+
+  var area = document.getElementById('gameArea');
+  area.innerHTML = '';
+  area.appendChild(grid);
+}
+
+function handleItemClick(btn, isCorrect){
+  if (btn.classList.contains('correct')) return;
+  if (isCorrect){
+    btn.classList.add('correct');
+    document.querySelectorAll('.item-btn').forEach(function(b){ if (b!==btn) b.disabled = true; });
+    var fb = document.getElementById('feedback');
+    fb.textContent = "That's it! On to the next stop! 🎉";
+    fb.className = 'feedback win';
+    stars.total++;
+    setTimeout(function(){
+      currentLevel++;
+      loadLevel();
+    }, 900);
+  } else {
+    btn.classList.add('wrong');
+    wrongTries++;
+    var fb = document.getElementById('feedback');
+    fb.textContent = "Not quite — try again!";
+    fb.className = 'feedback miss';
+    setTimeout(function(){ btn.classList.remove('wrong'); }, 400);
+    if (mode === 'easy' && wrongTries >= 1){
+      showHint();
+    }
+  }
+}
+
+function showHint(){
+  var hintBtn = document.getElementById('hintBtn');
+  hintBtn.disabled = true;
+  hintBtn.textContent = '✨ Look for the glowing one!';
+  var buttons = document.querySelectorAll('.item-btn');
+  buttons.forEach(function(b){
+    // find matching correct button by checking future click result via stored dataset
+  });
+  // Determine current level's correct label
+  var levelData = currentLevel < LEVELS.length ? LEVELS[currentLevel] : null;
+  if (levelData){
+    buttons.forEach(function(b){
+      if (b.innerText.indexOf(levelData.correct.label) !== -1){
+        b.classList.add('hinted');
+      }
+    });
+  }
+}
+
+/* ---------------- Door finale ---------------- */
+function renderDoorLevel(){
+  document.getElementById('planetBadge').textContent = 'STOP 5 OF 5';
+  document.getElementById('levelName').textContent = 'The Mars Base';
+  document.getElementById('clueBox').innerHTML = '<b>Clue:</b> ' + (mode === 'easy'
+    ? "Marshie is hiding behind one of these doors. Look closely — do you see a little peek?"
+    : "Marshie made it home to Mars Base and is hiding behind one door. Watch carefully for a clue!");
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('hintBtn').style.display = mode === 'easy' ? 'none' : 'inline-block';
+  document.getElementById('hintBtn').disabled = false;
+  document.getElementById('hintBtn').textContent = '💡 Need a hint?';
+
+  var doorCount = mode === 'easy' ? 3 : 4;
+  var winnerIndex = Math.floor(Math.random() * doorCount);
+
+  var row = document.createElement('div');
+  row.className = 'doors-row';
+  for (var i=0;i<doorCount;i++){
+    var d = document.createElement('div');
+    d.className = 'door';
+    var peek = document.createElement('div');
+    peek.className = 'peek';
+    peek.textContent = '👀';
+    d.appendChild(peek);
+    var knob = document.createElement('div');
+    knob.className = 'knob';
+    d.appendChild(knob);
+    if (i === winnerIndex && mode === 'easy'){
+      d.classList.add('peeking');
+    }
+    (function(doorEl, isWinner){
+      doorEl.onclick = function(){ handleDoorClick(doorEl, isWinner); };
+    })(d, i === winnerIndex);
+    row.appendChild(d);
+  }
+
+  var area = document.getElementById('gameArea');
+  area.innerHTML = '';
+  area.appendChild(row);
+
+  window._hardDoorWinner = winnerIndex;
+  window._hardDoors = row.children;
+}
+
+function handleDoorClick(doorEl, isWinner){
+  if (doorEl.classList.contains('opened')) return;
+  if (isWinner){
+    doorEl.classList.add('opened');
+    doorEl.innerHTML = '<span style="font-size:2rem;">🛸</span>';
+    var fb = document.getElementById('feedback');
+    fb.textContent = "You found Marshie!! 🎉";
+    fb.className = 'feedback win';
+    currentLevel++;
+    stars.total++;
+    setTimeout(finishGame, 1000);
+  } else {
+    doorEl.classList.add('wrong');
+    var fb = document.getElementById('feedback');
+    fb.textContent = "Empty room — try another door!";
+    fb.className = 'feedback miss';
+    setTimeout(function(){ doorEl.classList.remove('wrong'); }, 400);
+    if (mode === 'hard'){
+      doorEl.style.pointerEvents = 'none';
+      doorEl.style.opacity = '0.5';
+    }
+  }
+}
+
+/* ---------------- Finale ---------------- */
+function finishGame(){
+  showScreen('screen-finale');
+  var badgeRow = document.getElementById('badgeRow');
+  badgeRow.innerHTML = '';
+  var badges = ['🍌','🏐','🔭','🧢','🛸'];
+  badges.forEach(function(b, idx){
+    var span = document.createElement('span');
+    span.className = 'badge';
+    span.textContent = b;
+    span.style.animationDelay = (idx * 0.1) + 's';
+    badgeRow.appendChild(span);
+  });
+  launchConfetti();
+}
+
+function launchConfetti(){
+  var colors = ['#7FE0A0','#FFD75E','#FF6F91','#E17A4E','#FBF6EC'];
+  var app = document.getElementById('app');
+  for (var i=0;i<50;i++){
+    var c = document.createElement('div');
+    c.className = 'confetti';
+    var size = Math.random()*8+6;
+    c.style.width = size+'px';
+    c.style.height = (size*0.6)+'px';
+    c.style.left = (Math.random()*100)+'%';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (Math.random()*2+2.5)+'s';
+    c.style.animationDelay = (Math.random()*0.6)+'s';
+    app.appendChild(c);
+    (function(el){ setTimeout(function(){ el.remove(); }, 5200); })(c);
+  }
+}
+</script>
+</body>
+</html>
